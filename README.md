@@ -48,16 +48,16 @@ LLaMA 3.3          →  Answers from context
 ## 📸 Screenshots
 
 ### n8n Workflow — Meeting Summarizer
-![Meeting Summarizer Workflow](C:\Users\HP\OneDrive\Pictures\workflow_summarizer.png)
+![Meeting Summarizer Workflow](screenshots/workflow_summarizer.png)
 
 ### n8n Workflow — Meeting Query
-![Meeting Query Workflow](C:\Users\HP\OneDrive\Pictures\workflow_query.png)
+![Meeting Query Workflow](screenshots/workflow_query.png)
 
 ### Slack Delivery
-![Slack Summary](C:\Users\HP\OneDrive\Pictures\slack.png)
+![Slack Summary](screenshots/slack.png)
 
 ### Notion Database
-![Notion Database](C:\Users\HP\OneDrive\Pictures\notion.png)
+![Notion Database](screenshots/notion.png)
 
 ---
 
