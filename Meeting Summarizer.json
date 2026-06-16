@@ -1,0 +1,422 @@
+{
+  "name": "Meeting Summarizer",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "groqApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-type",
+              "value": "application/json"
+            },
+            {
+              "name": "Auhtorization",
+              "value": "YOUR_GROQ_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama-3.3-70b-versatile\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"={{ 'You are a meeting assistant. Summarize this transcript. Give SUMMARY, KEY DECISIONS, ACTION ITEMS and NEXT STEPS. Transcript: ' + $json.text }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        272,
+        -32
+      ],
+      "id": "0f25c177-f7a1-4a44-ae23-4b94d43de1dd",
+      "name": "HTTP Request",
+      "credentials": {
+        "groqApi": {
+          "id": "RSEfe0ulP9M2fQaZ",
+          "name": "Groq account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "formTitle": "Meeting Summarizer",
+        "formDescription": "Upload your meeting recording to get an AI-generated summary, key decisions and action items.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Name"
+            },
+            {
+              "fieldLabel": "Meeting Audio",
+              "fieldType": "file"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        -272,
+        -32
+      ],
+      "id": "325c46af-1b44-4536-a8b7-1a0987dfcf57",
+      "name": "On form submission",
+      "webhookId": "0dcb5956-eabd-4f14-9e96-b1ba67dedd39"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/audio/transcriptions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "groqApi",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "=Meeting_Audio"
+            },
+            {
+              "name": "model",
+              "value": "whisper-large-v3"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        32,
+        -32
+      ],
+      "id": "68a8002e-458b-46a8-9054-2523e7030516",
+      "name": "HTTP Request1",
+      "credentials": {
+        "groqApi": {
+          "id": "RSEfe0ulP9M2fQaZ",
+          "name": "Groq account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0B8S31GVQQ",
+          "mode": "list",
+          "cachedResultName": "meeting-summaries"
+        },
+        "text": "={{ '👤 Submitted by: ' + $('On form submission').item.json.Name + '\\n📅 Date: ' + new Date().toLocaleDateString() + '\\n\\n' + $json.choices[0].message.content }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "mrkdwn": true
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        480,
+        -32
+      ],
+      "id": "a084a05c-7218-406e-b607-f2d08979a612",
+      "name": "Send a message",
+      "webhookId": "1e7e906b-4fe3-4748-b32c-74af730e13f7",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "fVTLbLMU8QCAJpEp",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "374773e1-7e4e-80cf-9122-f2e512c4248d",
+          "mode": "list",
+          "cachedResultName": "Summaries",
+          "cachedResultUrl": "https://app.notion.com/p/374773e17e4e80cf9122f2e512c4248d"
+        },
+        "title": "=={{ 'Meeting - ' + new Date().toLocaleDateString() }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Date|date",
+              "date": "=={{ new Date(Date.now() + 5.5*60*60*1000).toISOString().split('T')[0] }}",
+              "timezone": "Asia/Kolkata"
+            },
+            {
+              "key": "Submitted by|rich_text",
+              "textContent": "=={{ $('On form submission').item.json.Name }}"
+            },
+            {
+              "key": "Summary|rich_text",
+              "richText": true,
+              "text": {
+                "text": [
+                  {
+                    "textType": "=text",
+                    "text": "=={{ $('HTTP Request').item.json.choices[0].message.content }}",
+                    "annotationUi": {}
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        688,
+        -32
+      ],
+      "id": "1588c43e-df23-4d04-bae7-eefd347e4ae0",
+      "name": "Create a database page",
+      "credentials": {
+        "notionApi": {
+          "id": "quIlnscHjXwSZUtZ",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0B8S31GVQQ",
+          "mode": "list",
+          "cachedResultName": "meeting-summaries"
+        },
+        "text": "=={{ '⚠️ Whisper Transcription Failed!\\nSubmitted by: ' + $('On form submission').item.json.Name + '\\nPlease re-upload your audio file.' }}",
+        "otherOptions": {
+          "mrkdwn": true
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        272,
+        192
+      ],
+      "id": "14005b11-0d3c-4491-abfd-a55aedad48fd",
+      "name": "Send a message1",
+      "webhookId": "6a96c87a-8f08-45dd-a71b-8fc0fcdf33ed",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "fVTLbLMU8QCAJpEp",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0B8S31GVQQ",
+          "mode": "list",
+          "cachedResultName": "meeting-summaries"
+        },
+        "text": "=={{ '⚠️ Summary Generation Failed!\\nSubmitted by: ' + $('On form submission').item.json.Name + '\\nTranscription worked but AI summarization failed.\\nPlease try again.' }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        560,
+        192
+      ],
+      "id": "5530263f-0381-47d6-a623-399594b49dfc",
+      "name": "Send a message2",
+      "webhookId": "77aeff76-7edf-405a-850d-a2427f3e3ff5",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "fVTLbLMU8QCAJpEp",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "=meeting-summaries",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        896,
+        -32
+      ],
+      "id": "15cd593c-082f-4730-a841-7250f635931f",
+      "name": "Qdrant Vector Store",
+      "credentials": {
+        "qdrantApi": {
+          "id": "Ec64NkLNFEBhBCHF",
+          "name": "Qdrant account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "embed-english-v3.0"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsCohere",
+      "typeVersion": 1,
+      "position": [
+        864,
+        208
+      ],
+      "id": "18cd8caf-83e3-4daa-9cdd-fcac6b30e79a",
+      "name": "Embeddings Cohere",
+      "credentials": {
+        "cohereApi": {
+          "id": "fjMPhz1a7ElDOTyZ",
+          "name": "Cohere account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "=={{ $('HTTP Request').item.json.choices[0].message.content }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        1072,
+        208
+      ],
+      "id": "01b175de-22fd-4828-90bf-6a58b36a598f",
+      "name": "Default Data Loader"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Create a database page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a database page": {
+      "main": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Cohere": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "d5e41106-d7f3-4ade-8b1b-22c529ec8ccb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "71a239f1ea12324df44865637d97d47159b4fb40301d3b2c05e609c53fb69ae3"
+  },
+  "id": "AbVp1jgAjQTQjyoP",
+  "tags": []
+}
